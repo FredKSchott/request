@@ -26,7 +26,7 @@ var server = http.createServer(function(req, resp) {
   }
   if (req.url === '/proxy') {
     assert.equal(req.method, 'PUT')
-    return req.pipe(request('http://localhost:6767/put')).pipe(resp)
+    return req.pipe(request.put('http://localhost:6767/put')).pipe(resp)
   }
   if (req.url === '/test') {
     return request('http://localhost:6767/get').pipe(request.put('http://localhost:6767/proxy')).pipe(resp)

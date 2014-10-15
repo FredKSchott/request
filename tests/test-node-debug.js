@@ -29,7 +29,7 @@ tape('a simple request should not fail with debugging enabled', function(t) {
 
     t.ok(stderr.length, 'stderr has some messages')
     ;[
-      /^REQUEST { uri: /,
+      /^REQUEST init\(\) called with options { uri: /,
       /^REQUEST make request http:\/\/localhost:6767\/\n$/,
       /^REQUEST onResponse /,
       /^REQUEST finish init /,

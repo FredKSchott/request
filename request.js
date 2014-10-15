@@ -197,8 +197,18 @@ function Request (options) {
   // remove any reserved functions from the options object
   // set Request instance to be readable and writable
   // call init
-
   var self = this
+
+  // SETUP REQUEST BASED ON GIVEN OPTIONS
+  self.explicitMethod = (typeof options.method !== 'undefined')
+  self.qsLib = (typeof options.useQuerystring !== 'undefined') ? querystring : qs
+
+  // SET OPTION DEFAULTS
+  options.headers = (typeof options.headers !== 'undefined') ? copy(options.headers) : {}
+  options.method = (typeof options.method !== 'undefined') ? options.method : 'GET'
+  options.pool = (typeof options.pool !== 'undefined') ? options.pool : globalPool
+  options.tunnel = (typeof options.tunnel !== 'undefined') ? options.tunnel : false
+
   stream.Stream.call(self)
   var reserved = Object.keys(Request.prototype)
   var nonReserved = filterForNonReserved(reserved, options)
@@ -209,13 +219,7 @@ function Request (options) {
 
   self.readable = true
   self.writable = true
-  if (typeof options.tunnel === 'undefined') {
-    options.tunnel = false
-  }
-  if (options.method) {
-    self.explicitMethod = true
-  }
-  self.canTunnel = options.tunnel !== false && tunnel
+
   self.init(options)
 }
 
@@ -264,8 +268,9 @@ Request.prototype.init = function (options) {
   if (!options) {
     options = {}
   }
-  self.headers = self.headers ? copy(self.headers) : {}
+  debug('init() called with options', options)
 
+  self.headers = self.headers ? copy(self.headers) : {}
   caseless.httpify(self, self.headers)
 
   // Never send proxy-auth to the endpoint!
@@ -274,21 +279,7 @@ Request.prototype.init = function (options) {
     self.removeHeader('proxy-authorization')
   }
 
-  if (!self.method) {
-    self.method = options.method || 'GET'
-  }
-  self.localAddress = options.localAddress
-
-  if (!self.qsLib) {
-    self.qsLib = (options.useQuerystring ? querystring : qs)
-  }
-
-  debug(options)
-  if (!self.pool && self.pool !== false) {
-    self.pool = globalPool
-  }
   self.dests = self.dests || []
-  self.__isRequestRequest = true
 
   // Protect against double callback
   if (!self._callback && self.callback) {
@@ -370,8 +361,6 @@ Request.prototype.init = function (options) {
     }
   }
 
-  // Pass in `tunnel:true` to *always* tunnel through proxies
-  self.tunnel = !!options.tunnel
   if (self.proxy) {
     self.setupTunnel()
   }
@@ -416,7 +405,7 @@ Request.prototype.init = function (options) {
     self.setHost = true
   }
 
-  self.jar(self._jar || options.jar)
+  self.jar(self._jar)
 
   if (!self.uri.port) {
     if (self.uri.protocol === 'http:') {self.uri.port = 80}
